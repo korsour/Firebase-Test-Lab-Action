@@ -1,6 +1,7 @@
 #! /bin/bash
 
 set -e
+set -o pipefail
 
 if [ -z "$SERVICE_ACCOUNT" ]; then
   echo "Service account is required to authorize gcloud to access the Cloud Platform."
@@ -18,12 +19,11 @@ project_id=$(cat $service_account_file | jq -r ".project_id")
 gcloud auth activate-service-account --key-file=$service_account_file
 gcloud config set project $project_id
 
-if gcloud firebase test android run $arg_spec
-then
+if gcloud firebase test android run $arg_spec 2>&1 | tee testlab.log; then
     echo "Test matrix successfully finished"
 else
     status=$?
-    echo "Test matrix exited abnormally with non-zero exit code: " $status
+    echo "Test matrix exited abnormally with non-zero exit code: $status"
 fi
 
 rm $service_account_file
